@@ -1,10 +1,26 @@
-import numpy as np
 
-def gradient_descent(x0, steps, grad):
+def gradient_descent(x0, step, grad):
+    """ Vanilla gradient descent
+
+    Params
+    ------
+
+    x0 : initial guess
+
+    step : step size (ie learning rate)
+
+    grad : gradient function
+
+    Yields
+    ------
+
+    xi : next step along gradient direction
+    """
 
     yield x0
+
     xi = x0
-    for step in steps:
+    while True:
         xi = xi - step * grad(xi)
         yield xi
 

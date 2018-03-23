@@ -13,7 +13,7 @@ from numpy.linalg import multi_dot
 
 
 def quadratic(size=2):
-    Q = stats.wishart.rvs(size, np.eye(size))
+    Q = stats.wishart.rvs(size ** 2, np.eye(size))
     b = stats.norm.rvs(size=size)
     c = stats.norm.rvs()
     f = lambda x: multi_dot([x, Q, x]) + b.dot(x) + c
@@ -29,9 +29,9 @@ def quadratic(size=2):
 def main(args):
     argp = ap.ArgumentParser(description="")
     argp.add_argument("-d", "--dim", type=int, default=2)
-    argp.add_argument("-s", "--steps", type=int, default=100)
     argp.add_argument("-l", "--learn_rate", type=float, default=0.1)
-    argp.add_argument("--opt_rate", action="store_true", default=False)
+    argp.add_argument("-e", "--error-tol", type=float, default=1e-3)
+    argp.add_argument("--opt-rate", action="store_true", default=False, help="Use optimal learning rate?")
     argp.add_argument("-o", "--output", type=ap.FileType("w"), default=sys.stdout)
 
     args = argp.parse_args(args)
@@ -43,8 +43,17 @@ def main(args):
         step_size = args.learn_rate
 
     x0 = np.random.normal(size=args.dim)
-    for idx, local in enumerate(opt.gradient_descent(x0, [step_size]*args.steps, g)):
+    for idx, local in enumerate(opt.gradient_descent(x0, step_size, g)):
+        lsol_cur = f(local)
         args.output.write("Step {}: f({}) = {}{}".format(idx, local, f(local), os.linesep))
+
+        if idx == 0:
+            lsol_last = lsol_cur
+            continue
+        elif lsol_last - lsol_cur < args.error_tol:
+            break
+
+        lsol_last = lsol_cur
 
     return 0
 
