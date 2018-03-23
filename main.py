@@ -47,10 +47,7 @@ def main(args):
         lsol_cur = f(local)
         args.output.write("Step {}: f({}) = {}{}".format(idx, local, f(local), os.linesep))
 
-        if idx == 0:
-            lsol_last = lsol_cur
-            continue
-        elif lsol_last - lsol_cur < args.error_tol:
+        if idx > 0 and lsol_last - lsol_cur < args.error_tol:
             break
 
         lsol_last = lsol_cur
