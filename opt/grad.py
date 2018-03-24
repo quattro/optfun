@@ -21,7 +21,7 @@ def gd(x0, step, grad, **kwargs):
 
     xi = x0
     while True:
-        xi = xi - step * grad(xi)
+        xi = xi - step(xi) * grad(xi)
         yield xi
 
     return
@@ -52,7 +52,7 @@ def mgd(x0, step, grad, **kwargs):
     xlast = x0
     xi = xlast
     while True:
-        tmp = xi - step * grad(xi) + friction * (xi - xlast)
+        tmp = xi - step(xi) * grad(xi) + friction * (xi - xlast)
         yield tmp
         xlast = xi
         xi = tmp
