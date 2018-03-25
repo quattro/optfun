@@ -16,10 +16,10 @@ POLYAK = "polyak"
 
 
 def quadratic(size=2):
-    Q = stats.wishart.rvs(size ** 2, np.eye(size))
+    Q = stats.wishart.rvs(size , np.eye(size))
     b = stats.norm.rvs(size=size)
     c = stats.norm.rvs()
-    f = lambda x: multi_dot([x, Q, x]) - b.dot(x) + c
+    f = lambda x: 0.5 * multi_dot([x, Q, x]) - b.dot(x) + c
     g = lambda x: Q.dot(x) - b
     h = lambda x: Q
 
@@ -39,7 +39,7 @@ def run(optfun, f, x0, step, grad, verbose, error_tol, output, **kwargs):
             output.write("\rStep {}: f(xi) = {}".format(idx, f(local)))
             output.flush()
 
-        if idx > 0: 
+        if idx > 0:
             diff = lsol_last - lsol_cur
             if 0 <= diff <= error_tol:
                 break
@@ -63,9 +63,7 @@ def run(optfun, f, x0, step, grad, verbose, error_tol, output, **kwargs):
 def main(args):
     argp = ap.ArgumentParser(description="")
     argp.add_argument("-d", "--dim", type=int, default=2)
-    argp.add_argument("-l", "--learn_rate", type=float, default=0.1)
     argp.add_argument("-e", "--error-tol", type=float, default=1e-3)
-    argp.add_argument("-r", "--opt_rate", action="store_true", default=False)
     argp.add_argument("-v", "--verbose", action="store_true", default=False)
     argp.add_argument("-o", "--output", type=ap.FileType("w"), default=sys.stdout)
 
@@ -73,12 +71,6 @@ def main(args):
 
     # build function
     f, g, h, beta, alpha = quadratic(args.dim)
-
-    # use optimal step size?
-    if args.opt_rate:
-        step = lambda x: 1 / beta
-    else:
-        step = lambda x: args.learn_rate
 
     # Backtracking line search
     def backtrack(xi, rate):
@@ -105,12 +97,18 @@ def main(args):
     # initial guess
     x0 = np.random.normal(size=args.dim)
 
+    args.output.write("Condition number: {}".format(beta / alpha) + os.linesep)
     #GD
-    args.output.write("Gradient Descent" + os.linesep)
+    step = lambda x: 2 / (beta + alpha)
+    args.output.write("Gradient Descent with step {}".format(step(0)) + os.linesep)
+    run(opt.gd, f, x0, step, g, args.verbose, args.error_tol, args.output)
+
+    step = lambda x: 1 / beta
+    args.output.write("Gradient Descent with step {}".format(step(0)) + os.linesep)
     run(opt.gd, f, x0, step, g, args.verbose, args.error_tol, args.output)
 
     #GD + backtracking line search
-    line_step = lambda x: backtrack(x, step(0))
+    line_step = lambda x: backtrack(x, 0.1)
     args.output.write("Gradient Descent with Backtracking line search" + os.linesep)
     run(opt.gd, f, x0, line_step, g, args.verbose, args.error_tol, args.output)
 
@@ -120,8 +118,10 @@ def main(args):
     run(opt.gd, f, x0, line_step, g, args.verbose, args.error_tol, args.output)
 
     #GD + momentum
-    args.output.write("Polyak Heavy-ball Gradient Descent" + os.linesep)
-    run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=0.25)
+    step = lambda x: 4 / (np.sqrt(beta) + np.sqrt(alpha))**2
+    friction = (np.sqrt(beta) - np.sqrt(alpha)) / (np.sqrt(beta) + np.sqrt(alpha))
+    args.output.write("Polyak Heavy-ball Gradient Descent with step {} and friction {}".format(step(0), friction) + os.linesep)
+    run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=friction)
 
     return 0
 
