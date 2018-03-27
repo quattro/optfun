@@ -72,3 +72,5 @@ def agd(x0, step, grad, **kwargs):
         pi = friction * pi - step(xi0) * grad(xi)
         xi = xi - friction * p_tmp + (1 + friction) * pi
         yield xi
+    
+    return
