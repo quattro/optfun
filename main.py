@@ -59,14 +59,6 @@ def run(optfun, f, x0, step, grad, verbose, error_tol, output, **kwargs):
             diff = lsol_last - lsol_cur
             if 0 <= diff <= error_tol:
                 break
-            elif diff < 0:
-                if verbose:
-                    output.write("Step DIVERGED: f({}) = {}{}".format(local, f(local), os.linesep))
-                else:
-                    output.write("\rStep DIVERGED: f(xi) = {}".format(f(local)))
-                    output.flush()
-
-                break
 
         lsol_last = lsol_cur
 
@@ -79,6 +71,8 @@ def run(optfun, f, x0, step, grad, verbose, error_tol, output, **kwargs):
 def main(args):
     argp = ap.ArgumentParser(description="")
     argp.add_argument("-d", "--dim", type=int, default=2)
+    argp.add_argument("-a", "--alpha", type=int, default=1, help="minimum eigenvalue")
+    argp.add_argument("-b", "--beta", type=int, default=10, help="maximum eigenvalue")
     argp.add_argument("-e", "--error-tol", type=float, default=1e-3)
     argp.add_argument("-v", "--verbose", action="store_true", default=False)
     argp.add_argument("-o", "--output", type=ap.FileType("w"), default=sys.stdout)
@@ -86,7 +80,7 @@ def main(args):
     args = argp.parse_args(args)
 
     # build function
-    f, g, h, beta, alpha = quadratic(args.dim)
+    f, g, h, beta, alpha = quadratic(args.dim, args.beta, args.alpha)
 
     # Backtracking line search
     def backtrack(xi, rate):
@@ -133,6 +127,7 @@ def main(args):
     run(opt.gd, f, x0, line_step, g, args.verbose, args.error_tol, args.output)
 
     #GD + momentum
+    step = lambda x: 4 / (np.sqrt(beta) + np.sqrt(alpha)) ** 2
     friction = (np.sqrt(beta) - np.sqrt(alpha)) / (np.sqrt(beta) + np.sqrt(alpha))
     args.output.write("Polyak Heavy-ball Gradient Descent with step {} and friction {}".format(step(0), friction) + os.linesep)
     run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=friction)

@@ -52,8 +52,11 @@ def mgd(x0, step, grad, **kwargs):
     pi = 0
     xi = x0
     while True:
-        pi = -grad(xi) + friction * pi
-        xi = xi + step(xi) * pi
+        pi = -step(xi) * grad(xi) + friction * pi
+        xi = xi + pi
         yield xi
+
+    #v = mu * v - learning_rate * dx # integrate velocity
+    #x += v # integrate position
 
     return
