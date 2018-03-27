@@ -50,11 +50,10 @@ def mgd(x0, step, grad, **kwargs):
     friction = kwargs.get("friction", 0)
 
     pi = 0
-    xlast = x0
-    xi = xlast
+    xi = x0
     while True:
-        pi = -step(xi) * grad(xi) + friction * pi
-        xi = xi + pi
+        pi = -grad(xi) + friction * pi
+        xi = xi + step(xi) * pi
         yield xi
 
     return

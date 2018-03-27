@@ -11,12 +11,28 @@ import scipy.stats as stats
 from numpy.linalg import multi_dot
 
 
-VANILLA = "vanilla"
-POLYAK = "polyak"
+def get_matrix(n, beta, alpha):
+    """
+    Generate a random matrix with condition number kappa = beta / alpha
+    """
+    A = stats.norm.rvs(size=(n, n))
+    Q, R = linalg.qr(A)
+    S = stats.norm.rvs(size=n)
+    S = 10 ** S
+    Smin = min(S)
+    Smax = max(S)
+    S = (S - Smin) / (Smax - Smin)
+    S = alpha + S * (beta - alpha)
+    A = multi_dot([Q.T, np.diag(S), Q])
+
+    return A
 
 
-def quadratic(size=2):
-    Q = stats.wishart.rvs(size , np.eye(size))
+def quadratic(size=2, beta=10, alpha=1):
+    """
+    Generate a random quadratic form
+    """
+    Q = get_matrix(size, beta, alpha)
     b = stats.norm.rvs(size=size)
     c = stats.norm.rvs()
     f = lambda x: 0.5 * multi_dot([x, Q, x]) - b.dot(x) + c
@@ -75,16 +91,15 @@ def main(args):
     # Backtracking line search
     def backtrack(xi, rate):
         rho = 0.9
-        c = 1e-4
+        c = 0.5
+        gi = g(xi)
         while True:
-            gi = g(xi)
             v1 = f(xi - rate * gi)
             v2 = f(xi) - c * rate * gi.dot(gi)
             if v1 <= v2:
                 break
 
             rate = rho * rate
-
         return rate
 
     # Exact line search for quadratic
@@ -93,11 +108,11 @@ def main(args):
         Q = h(xi)
         return gi.dot(gi) / multi_dot([gi, Q, gi])
 
-
     # initial guess
     x0 = np.random.normal(size=args.dim)
 
     args.output.write("Condition number: {}".format(beta / alpha) + os.linesep)
+
     #GD
     step = lambda x: 2 / (beta + alpha)
     args.output.write("Gradient Descent with step {}".format(step(0)) + os.linesep)
@@ -108,8 +123,8 @@ def main(args):
     run(opt.gd, f, x0, step, g, args.verbose, args.error_tol, args.output)
 
     #GD + backtracking line search
-    line_step = lambda x: backtrack(x, 0.1)
-    args.output.write("Gradient Descent with Backtracking line search" + os.linesep)
+    line_step = lambda x: backtrack(x, 0.2)
+    args.output.write("Gradient Descent with backtracking line search" + os.linesep)
     run(opt.gd, f, x0, line_step, g, args.verbose, args.error_tol, args.output)
 
     #GD + exact line search
@@ -118,7 +133,6 @@ def main(args):
     run(opt.gd, f, x0, line_step, g, args.verbose, args.error_tol, args.output)
 
     #GD + momentum
-    step = lambda x: 4 / (np.sqrt(beta) + np.sqrt(alpha))**2
     friction = (np.sqrt(beta) - np.sqrt(alpha)) / (np.sqrt(beta) + np.sqrt(alpha))
     args.output.write("Polyak Heavy-ball Gradient Descent with step {} and friction {}".format(step(0), friction) + os.linesep)
     run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=friction)
