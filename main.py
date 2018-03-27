@@ -132,6 +132,12 @@ def main(args):
     args.output.write("Polyak Heavy-ball Gradient Descent with step {} and friction {}".format(step(0), friction) + os.linesep)
     run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=friction)
 
+    #GD + Nesterov momentum
+    step = lambda x: 1 / beta
+    friction = (np.sqrt(beta) - np.sqrt(alpha)) / (np.sqrt(beta) + np.sqrt(alpha))
+    args.output.write("Accelerated Gradient Descent with step {} and friction {}".format(step(0), friction) + os.linesep)
+    run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=friction)
+
     return 0
 
 

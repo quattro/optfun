@@ -56,7 +56,19 @@ def mgd(x0, step, grad, **kwargs):
         xi = xi + pi
         yield xi
 
-    #v = mu * v - learning_rate * dx # integrate velocity
-    #x += v # integrate position
-
     return
+
+def agd(x0, step, grad, **kwargs):
+    """ Nesterov's accelerated gradient descent
+    """
+    yield x0
+
+    friction = kwargs.get("friction", 0)
+
+    pi = 0
+    xi = x0
+    while True:
+        p_tmp = pi
+        pi = friction * pi - step(xi0) * grad(xi)
+        xi = xi - friction * p_tmp + (1 + friction) * pi
+        yield xi
