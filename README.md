@@ -1,2 +1,4 @@
 # optfun
-approximate optimization in demented times
+Approximate optimization in demented times
+
+This respository serves as a sandbox for various convex optimization approaches
