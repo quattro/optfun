@@ -138,6 +138,11 @@ def main(args):
     args.output.write("Accelerated Gradient Descent with step {} and friction {}".format(step(0), friction) + os.linesep)
     run(opt.mgd, f, x0, step, g, args.verbose, args.error_tol, args.output, friction=friction)
 
+    #Conjugate GD for linear systems
+    step = lambda x: None
+    args.output.write("Conjugate Gradient Descent" + os.linesep)
+    run(opt.lcgd, f, x0, step, g, args.verbose, args.error_tol, args.output, hess=h)
+
     return 0
 
 
